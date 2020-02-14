@@ -1,6 +1,6 @@
 $token = "your token here"
 $organization = "your_organization_name_here"
-$backuproot = "C:\your_repo_backup_folder"
+$backuproot = "C:\your_repo_backup_folder\"
 $backupfolder = "$($backuproot)\$(get-date -f MM-dd-yyyy_HH_mm_ss)\"
 
 
