@@ -8,12 +8,32 @@ $e = @{
     Uri     = "https://dev.azure.com/$($organization)/_apis/projects?api-version=5.1"
     Headers = @{"Authorization" = "Basic $($token)"}
 }
+try { 
 
 $response = Invoke-RestMethod @e
 
 foreach ($i in $response.value)
 {
-Invoke-Expression "git clone --mirror -c http.extraheader=`"AUTHORIZATION: Basic $($token)`" https://$($organization)@dev.azure.com/$($organization)/_git/$($i.name) $backupfolder$($i.name)"
+    $e2 = @{
+    Uri     = "https://dev.azure.com/$($organization)/$($i.name)/_apis/git/repositories?api-version=5.1"
+    Headers = @{"Authorization" = "Basic $($token)"}
+    }
+    $response2 = Invoke-RestMethod @e2
+    foreach ($i2 in $response2.value)
+    {
+        Write-Host "git clone --mirror -c http.extraheader=`"AUTHORIZATION: Basic $($token)`" $($i2.WebURL) $backupfolder$($i.name)_$($i2.Name)"
+        Invoke-Expression "git clone --mirror -c http.extraheader=`"AUTHORIZATION: Basic $($token)`" $($i2.WebURL) $backupfolder$($i.name)_$($i2.Name)"
+    }
 }
 
 Get-ChildItem $backuproot  -Directory | foreach{ if ($_.CreationTime -le (Get-Date).AddDays(-15)){ Remove-Item $_.fullname -Force  -Recurse}}
+
+Write-Host -NoNewLine 'END. Press any key to continue...';
+$null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown');
+}
+catch {
+  Write-Host "An error occurred:"
+  Write-Host $_
+  Write-Host -NoNewLine 'Press any key to continue...';
+  $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown');
+}
