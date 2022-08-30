@@ -6,7 +6,7 @@ $backupfolder = "$($backuproot)\$(get-date -f MM-dd-yyyy_HH_mm_ss)\"
 
 $e = @{
     Uri     = "https://dev.azure.com/$($organization)/_apis/projects?api-version=5.1"
-    Headers = @{"Authorization" = "Basic $($token)"}
+    Headers = @{"Authorization" = "Basic $($Token)"}
 }
 try { 
 
@@ -21,19 +21,21 @@ foreach ($i in $response.value)
     $response2 = Invoke-RestMethod @e2
     foreach ($i2 in $response2.value)
     {
-        Write-Host "git clone --mirror -c http.extraheader=`"AUTHORIZATION: Basic $($token)`" $($i2.WebURL) $backupfolder$($i.name)_$($i2.Name)"
-        Invoke-Expression "git clone --mirror -c http.extraheader=`"AUTHORIZATION: Basic $($token)`" $($i2.WebURL) $backupfolder$($i.name)_$($i2.Name)"
+        $Subrepo = $i2.Name -replace '\(',"" -replace '\)',""
+        Write-Host "git clone --mirror -c http.extraheader=`"AUTHORIZATION: Basic $($token)`" $($i2.WebURL) $backupfolder$($i.name)_$($Subrepo)"
+        Invoke-Expression "git clone --mirror -c http.extraheader=`"AUTHORIZATION: Basic $($token)`" $($i2.WebURL) `"$backupfolder$($i.name)_$($Subrepo)`""
     }
 }
 
 Get-ChildItem $backuproot  -Directory | foreach{ if ($_.CreationTime -le (Get-Date).AddDays(-15)){ Remove-Item $_.fullname -Force  -Recurse}}
 
 Write-Host -NoNewLine 'END. Press any key to continue...';
-$null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown');
+
 }
 catch {
   Write-Host "An error occurred:"
   Write-Host $_
-  Write-Host -NoNewLine 'Press any key to continue...';
-  $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown');
+  $wshell = New-Object -ComObject Wscript.Shell
+  $wshell.Popup($_,0,"Error Azure backup",0x0)
+
 }
